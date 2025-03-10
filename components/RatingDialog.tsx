@@ -22,7 +22,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { Textarea } from "@/components/ui/textarea";
 
 interface RatingDialogProps {
-  domain: Domain | null;
+  domain: (Domain & { rating?: { relevance: number; popularity: number; professionalism: number } }) | null;
   onClose: () => void;
   onSubmitSuccess?: () => void;
 }
@@ -98,7 +98,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          domain_id: domain.domain,
+          domain: domain.domain,
           user_id: user.id,
           relevance: parseInt(relevance),
           popularity: parseInt(popularity),

@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
 import RatingDialog from './RatingDialog';
 import { Domain } from '@/lib/db/schema';
 import { useAuth } from '@/lib/auth';
@@ -25,18 +26,32 @@ interface DomainWithRating extends Domain {
   };
 }
 
+interface PaginationData {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export default function DomainList({ initialDomains }: DomainListProps) {
-  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<DomainWithRating | null>(null);
   const [domains, setDomains] = useState<DomainWithRating[]>(initialDomains);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationData>({
+    total: initialDomains.length,
+    page: 1,
+    pageSize: 50,
+    totalPages: Math.ceil(initialDomains.length / 50)
+  });
   const { user } = useAuth();
 
   const refreshDomains = async () => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/domains?userId=${user.id}`);
+      const response = await fetch(`/api/domains?userId=${user.id}&page=${currentPage}&pageSize=50`);
       if (response.ok) {
         const data = await response.json();
-        const domainsWithRatings = data.map((d: any) => ({
+        const domainsWithRatings = data.domains.map((d: any) => ({
           domain: d.domain,
           subject_code: d.subject_code,
           url: d.url,
@@ -47,11 +62,25 @@ export default function DomainList({ initialDomains }: DomainListProps) {
           } : undefined
         }));
         setDomains(domainsWithRatings);
+        setPagination(data.pagination);
+        
+        // 如果当前选中的域名在新数据中，更新它的信息
+        if (selectedDomain) {
+          const updatedSelectedDomain = domainsWithRatings.find((d: DomainWithRating) => d.domain === selectedDomain.domain);
+          if (updatedSelectedDomain) {
+            setSelectedDomain(updatedSelectedDomain);
+          }
+        }
       }
     } catch (error) {
       console.error('Error refreshing domains:', error);
     }
   };
+
+  // 当页码改变时刷新数据
+  useEffect(() => {
+    refreshDomains();
+  }, [currentPage, user]);
 
   const handleRatingComplete = () => {
     refreshDomains();
@@ -71,14 +100,14 @@ export default function DomainList({ initialDomains }: DomainListProps) {
 
   // 计算进度
   const progress = useMemo(() => {
-    const total = domains.length;
+    const total = pagination.total;
     const rated = domains.filter(d => d.rating).length;
     return {
       rated,
       total,
       percentage: total > 0 ? Math.round((rated / total) * 100) : 0
     };
-  }, [domains]);
+  }, [domains, pagination.total]);
 
   return (
     <>
@@ -100,7 +129,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedDomains.map((domain) => (
+            {domains.map((domain) => (
               <TableRow 
                 key={domain.domain} 
                 className={`${domain.rating ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
@@ -130,6 +159,12 @@ export default function DomainList({ initialDomains }: DomainListProps) {
           </TableBody>
         </Table>
       </div>
+
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       <RatingDialog
         domain={selectedDomain}

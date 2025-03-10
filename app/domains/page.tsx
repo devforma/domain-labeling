@@ -1,4 +1,4 @@
-import { getDomainsWithRatings } from '@/lib/db';
+import { getDomainsWithRatingsPaginated } from '@/lib/db';
 import DomainList from '@/components/DomainList';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -12,7 +12,15 @@ export default async function DomainsPage() {
     redirect('/');
   }
 
-  const domains = await getDomainsWithRatings.all(user.id, user.subject_code);
+  // 获取第一页数据
+  const domains = await getDomainsWithRatingsPaginated.all(
+    user.subject_code,
+    user.id,
+    user.subject_code,
+    50,
+    0
+  );
+
   const domainsWithRatings = domains.map((domain: any) => ({
     domain: domain.domain,
     subject_code: domain.subject_code,

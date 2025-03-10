@@ -95,6 +95,29 @@ export const getDomainsWithRatings = db.prepare(`
   ORDER BY d.domain
 `);
 
+// 获取带评分的域名列表（分页）
+export const getDomainsWithRatingsPaginated = db.prepare(`
+  SELECT 
+    d.domain,
+    d.subject_code,
+    d.url,
+    r.relevance,
+    r.popularity,
+    r.professionalism,
+    r.created_at as rating_created_at,
+    r.updated_at as rating_updated_at,
+    (
+      SELECT COUNT(*) 
+      FROM domains d2 
+      WHERE d2.subject_code = ?
+    ) as total_count
+  FROM domains d
+  LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
+  WHERE d.subject_code = ?
+  ORDER BY d.domain
+  LIMIT ? OFFSET ?
+`);
+
 // 统计相关
 export const getDomainStats = db.prepare(`
   SELECT 
