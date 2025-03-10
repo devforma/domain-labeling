@@ -63,14 +63,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
         }));
         setDomains(domainsWithRatings);
         setPagination(data.pagination);
-        
-        // 如果当前选中的域名在新数据中，更新它的信息
-        if (selectedDomain) {
-          const updatedSelectedDomain = domainsWithRatings.find((d: DomainWithRating) => d.domain === selectedDomain.domain);
-          if (updatedSelectedDomain) {
-            setSelectedDomain(updatedSelectedDomain);
-          }
-        }
+        setSelectedDomain(null);
       }
     } catch (error) {
       console.error('Error refreshing domains:', error);

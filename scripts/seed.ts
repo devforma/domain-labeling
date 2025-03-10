@@ -54,7 +54,7 @@ function generateRandomDomain(index: number, subject: string) {
 
 // 生成更多测试域名
 const subjects = ['MATH', 'PHYSICS'];
-const additionalDomains = [];
+const additionalDomains: { domain: string; subject_code: string; url: string }[] = [];
 subjects.forEach(subject => {
   for (let i = 1; i <= 100; i++) {
     additionalDomains.push(generateRandomDomain(i, subject));
@@ -81,7 +81,7 @@ const baseRatings = [
 ];
 
 // 为部分随机域名生成评分
-const randomRatings = [];
+const randomRatings: { domain: string; username: string; relevance: number; popularity: number; professionalism: number; remark: string }[] = [];
 allDomains.forEach(domain => {
   // 随机决定是否为该域名生成评分（30%的概率）
   if (Math.random() < 0.3) {
