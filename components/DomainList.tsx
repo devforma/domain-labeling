@@ -23,6 +23,7 @@ interface DomainWithRating extends Domain {
     relevance: number;
     popularity: number;
     professionalism: number;
+    remark: string;
   };
 }
 
@@ -33,22 +34,29 @@ interface PaginationData {
   totalPages: number;
 }
 
+const pageSize = 20;
+
 export default function DomainList({ initialDomains }: DomainListProps) {
   const [selectedDomain, setSelectedDomain] = useState<DomainWithRating | null>(null);
   const [domains, setDomains] = useState<DomainWithRating[]>(initialDomains);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'status' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [pagination, setPagination] = useState<PaginationData>({
     total: initialDomains.length,
     page: 1,
-    pageSize: 50,
-    totalPages: Math.ceil(initialDomains.length / 50)
+    pageSize: pageSize,
+    totalPages: Math.ceil(initialDomains.length / pageSize)
   });
   const { user } = useAuth();
 
   const refreshDomains = async () => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/domains?userId=${user.id}&page=${currentPage}&pageSize=50`);
+      const response = await fetch(
+        `/api/domains?userId=${user.id}&page=${currentPage}&pageSize=${pageSize}` +
+        (sortBy ? `&sortBy=${sortBy}&sortOrder=${sortOrder}` : '')
+      );
       if (response.ok) {
         const data = await response.json();
         const domainsWithRatings = data.domains.map((d: any) => ({
@@ -58,7 +66,8 @@ export default function DomainList({ initialDomains }: DomainListProps) {
           rating: d.relevance ? {
             relevance: d.relevance,
             popularity: d.popularity,
-            professionalism: d.professionalism
+            professionalism: d.professionalism,
+            remark: d.remark
           } : undefined
         }));
         setDomains(domainsWithRatings);
@@ -70,26 +79,27 @@ export default function DomainList({ initialDomains }: DomainListProps) {
     }
   };
 
-  // 当页码改变时刷新数据
+  // 当页码或排序改变时刷新数据
   useEffect(() => {
     refreshDomains();
-  }, [currentPage, user]);
+  }, [currentPage, user, sortBy, sortOrder]);
 
   const handleRatingComplete = () => {
     refreshDomains();
     setSelectedDomain(null);
   };
 
-  // 排序后的域名列表
-  const sortedDomains = useMemo(() => {
-    return [...domains].sort((a, b) => {
-      // 如果一个有评分一个没有评分，没有评分的排在前面
-      if (a.rating && !b.rating) return 1;
-      if (!a.rating && b.rating) return -1;
-      // 如果都有评分或都没有评分，按域名字母顺序排序
-      return a.domain.localeCompare(b.domain);
-    });
-  }, [domains]);
+  // 移除本地排序逻辑，直接使用服务器返回的数据
+  const sortedDomains = domains;
+
+  const handleSort = (column: 'status') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
 
   // 计算进度
   const progress = useMemo(() => {
@@ -104,7 +114,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="text-sm text-gray-600">
           总计: {progress.total} 个域名，
           已评分: {progress.rated} 个，
@@ -112,52 +122,66 @@ export default function DomainList({ initialDomains }: DomainListProps) {
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>域名</TableHead>
-              <TableHead>URL</TableHead>
-              <TableHead>标注状态</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {domains.map((domain) => (
-              <TableRow 
-                key={domain.domain} 
-                className={`${domain.rating ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
-                onClick={() => setSelectedDomain(domain)}
-              >
-                <TableCell>{domain.domain}</TableCell>
-                <TableCell>
-                  <a 
-                    href={domain.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {domain.url}
-                  </a>
-                </TableCell>
-                <TableCell>
-                  {domain.rating ? (
-                    <span className="text-green-600">已标注</span>
-                  ) : (
-                    <span className="text-red-600">未标注</span>
-                  )}
-                </TableCell>
+      <div className="mx-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px] pl-6">域名</TableHead>
+                <TableHead className="w-[400px]">URL</TableHead>
+                <TableHead 
+                  className="w-[120px] pr-6 cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center gap-1">
+                    标注状态
+                    <span className="text-xs text-gray-400">
+                      {sortBy === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                    </span>
+                  </div>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {sortedDomains.map((domain) => (
+                <TableRow 
+                  key={domain.domain} 
+                  className={`${domain.rating ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                  onClick={() => setSelectedDomain(domain)}
+                >
+                  <TableCell className="w-[300px] pl-6 truncate">{domain.domain}</TableCell>
+                  <TableCell className="w-[400px]">
+                    <a 
+                      href={domain.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {domain.url}
+                    </a>
+                  </TableCell>
+                  <TableCell className="w-[120px] pr-6">
+                    {domain.rating ? (
+                      <span className="text-green-600">已标注</span>
+                    ) : (
+                      <span className="text-red-600">未标注</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <Pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={setCurrentPage}
-      />
+      <div className="flex items-center justify-center">
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
       <RatingDialog
         domain={selectedDomain}

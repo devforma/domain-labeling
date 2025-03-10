@@ -1,16 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getDomainsWithRatingsPaginated } from '@/lib/db';
+import db from '@/lib/db';
 import { cookies } from 'next/headers';
-
-interface DomainWithRating {
-  domain: string;
-  subject_code: string;
-  url: string;
-  relevance: number | null;
-  popularity: number | null;
-  professionalism: number | null;
-  total_count: number;
-}
 
 export async function GET(request: Request) {
   try {
@@ -25,38 +15,63 @@ export async function GET(request: Request) {
       );
     }
 
-    // 获取分页参数
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '50');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
+
+    // 构建基础查询
+    let query = `
+      SELECT 
+        d.domain,
+        d.subject_code,
+        d.url,
+        r.relevance,
+        r.popularity,
+        r.professionalism,
+        r.remark
+      FROM domains d
+      LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
+      WHERE d.subject_code = ?
+    `;
+
+    // 添加排序
+    if (sortBy === 'status') {
+      query += ` ORDER BY CASE 
+        WHEN r.relevance IS NOT NULL THEN 1 
+        ELSE 0 
+      END ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, d.domain ASC`;
+    } else {
+      query += ' ORDER BY d.domain ASC';
+    }
+
+    // 添加分页
     const offset = (page - 1) * pageSize;
+    query += ` LIMIT ? OFFSET ?`;
 
-    // 使用分页查询
-    const domains = await getDomainsWithRatingsPaginated.all(
-      user.subject_code, // 用于计算总数
-      user.id,          // 用于关联评分
-      user.subject_code, // 用于筛选数据
-      pageSize,         // LIMIT
-      offset           // OFFSET
-    ) as DomainWithRating[];
+    // 执行查询
+    const domains = db.prepare(query).all(
+      user.id,
+      user.subject_code,
+      pageSize,
+      offset
+    );
 
-    // 从结果中获取总数
-    const totalCount = domains[0]?.total_count || 0;
+    // 获取总数
+    const [{ count }] = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM domains 
+      WHERE subject_code = ?
+    `).all(user.subject_code) as { count: number }[];
 
     return NextResponse.json({
-      domains: domains.map(d => ({
-        domain: d.domain,
-        subject_code: d.subject_code,
-        url: d.url,
-        relevance: d.relevance,
-        popularity: d.popularity,
-        professionalism: d.professionalism
-      })),
+      domains,
       pagination: {
-        total: totalCount,
+        total: count,
         page,
         pageSize,
-        totalPages: Math.ceil(totalCount / pageSize)
+        totalPages: Math.ceil(count / pageSize)
       }
     });
   } catch (error) {

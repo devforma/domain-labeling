@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,24 +10,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
 import { toast } from 'sonner';
 import { Domain } from '@/lib/db/schema';
 import { useAuth } from '@/lib/auth';
-import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { Textarea } from "@/components/ui/textarea";
 
 interface RatingDialogProps {
-  domain: (Domain & { rating?: { relevance: number; popularity: number; professionalism: number } }) | null;
+  domain: (Domain & { rating?: { relevance: number; popularity: number; professionalism: number; remark: string } }) | null;
   onClose: () => void;
   onSubmitSuccess?: () => void;
 }
-
-const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const scoringCriteria = {
   relevance: [
@@ -54,40 +46,14 @@ const scoringCriteria = {
 };
 
 export default function RatingDialog({ domain, onClose, onSubmitSuccess }: RatingDialogProps) {
-  const [relevance, setRelevance] = useState('');
-  const [popularity, setPopularity] = useState('');
-  const [professionalism, setProfessionalism] = useState('');
-  const [remark, setRemark] = useState('');
+  if (!domain) return null;
+  
+  const [relevance, setRelevance] = useState(domain?.rating?.relevance.toString() || '');
+  const [popularity, setPopularity] = useState(domain?.rating?.popularity.toString() || '');
+  const [professionalism, setProfessionalism] = useState(domain?.rating?.professionalism.toString() || '');
+  const [remark, setRemark] = useState(domain?.rating?.remark || '');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchRating = async () => {
-      if (!domain || !user) return;
-
-      try {
-        const response = await fetch(`/api/ratings/${domain.domain}?userId=${user.id}`);
-        if (response.ok) {
-          const rating = await response.json();
-          if (rating) {
-            setRelevance(rating.relevance.toString());
-            setPopularity(rating.popularity.toString());
-            setProfessionalism(rating.professionalism.toString());
-            setRemark(rating.remark || '');
-          } else {
-            setRelevance('');
-            setPopularity('');
-            setProfessionalism('');
-            setRemark('');
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching rating:', error);
-      }
-    };
-
-    fetchRating();
-  }, [domain, user]);
 
   const handleSubmit = async () => {
     if (!domain || !user) return;
@@ -125,15 +91,13 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
     }
   };
 
-  if (!domain) return null;
-
   return (
     <Dialog open={!!domain} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-[1200px] [&>button]:hidden">
         <DialogHeader className="pb-2">
           <DialogTitle className='text-center'>
             <a 
-              href={`https://${domain.domain}`} 
+              href={domain.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-600 underline"
@@ -145,7 +109,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
         <div className="grid grid-cols-3 gap-2">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label>相关性</Label>
+              <Label className='font-bold'>相关性</Label>
             </div>
             <RadioGroup value={relevance} onValueChange={setRelevance} className="space-y-1" autoFocus={false}>
               {scoringCriteria.relevance.map((criteria) => (
@@ -183,7 +147,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label>科普性</Label>
+              <Label className='font-bold'>科普性</Label>
             </div>
             <RadioGroup value={popularity} onValueChange={setPopularity} className="space-y-1" autoFocus={false}>
               {scoringCriteria.popularity.map((criteria) => (
@@ -221,7 +185,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label>专业性</Label>
+              <Label className='font-bold'>专业性</Label>
             </div>
             <RadioGroup value={professionalism} onValueChange={setProfessionalism} className="space-y-1" autoFocus={false}>
               {scoringCriteria.professionalism.map((criteria) => (
@@ -259,7 +223,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
         </div>
 
         <div className="mt-4 space-y-2">
-          <Label>备注</Label>
+          <Label className='font-bold'>备注</Label>
           <Textarea
             value={remark}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRemark(e.target.value)}
@@ -273,7 +237,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
               size="sm"
               onClick={() => setRemark("网页无法打开")}
               type="button"
-              className="text-sm font-normal"
+              className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
             >
               网页无法打开
             </Button>
@@ -282,7 +246,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
               size="sm"
               onClick={() => setRemark("内容来源权威")}
               type="button"
-              className="text-sm font-normal"
+              className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
             >
               内容来源权威
             </Button>

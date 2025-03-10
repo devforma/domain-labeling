@@ -104,6 +104,7 @@ export const getDomainsWithRatingsPaginated = db.prepare(`
     r.relevance,
     r.popularity,
     r.professionalism,
+    r.remark,
     r.created_at as rating_created_at,
     r.updated_at as rating_updated_at,
     (
