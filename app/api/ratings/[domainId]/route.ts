@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getRatingByDomain } from '@/lib/db';
+import { getRatingByDomain, getUser } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { User } from '@/lib/db/schema';
 
 interface Rating {
   relevance: number;
@@ -13,18 +15,36 @@ export async function GET(
   { params }:any
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const { domainId } = await params;
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('user');
+    const user = JSON.parse(userCookie?.value || '{}');
 
-    if (!userId || !domainId) {
+    if (!user?.username || !user?.password) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 通过用户名和密码获取用户信息
+    const dbUser = getUser.get(user.username) as User;
+    if (!dbUser || dbUser.password !== user.password) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    const { domainId } = params;
+
+    if (!domainId) {
+      return NextResponse.json(
+        { error: 'Missing domain ID' },
         { status: 400 }
       );
     }
 
-    const rating = getRatingByDomain.get(domainId, parseInt(userId)) as Rating;
+    const rating = getRatingByDomain.get(domainId, dbUser.id) as Rating;
 
     if (!rating) {
       return NextResponse.json(null);

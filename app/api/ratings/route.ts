@@ -1,19 +1,41 @@
 import { NextResponse } from 'next/server';
-import { createRating, updateRating, getRatingByDomain } from '@/lib/db';
+import { createRating, updateRating, getRatingByDomain, getUser } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { User } from '@/lib/db/schema';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { domain, user_id, relevance, popularity, professionalism, remark } = body;
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('user');
+    const user = JSON.parse(userCookie?.value || '{}');
 
-    if (!domain || !user_id || !relevance || !popularity || !professionalism) {
+    if (!user?.username || !user?.password) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 通过用户名和密码获取用户信息
+    const dbUser = getUser.get(user.username) as User;
+    if (!dbUser || dbUser.password !== user.password) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { domain, relevance, popularity, professionalism, remark } = body;
+
+    if (!domain || !relevance || !popularity || !professionalism) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const existingRating = getRatingByDomain.get(domain, user_id);
+    const existingRating = getRatingByDomain.get(domain, dbUser.id);
 
     if (existingRating) {
       // 更新现有评分
@@ -23,11 +45,11 @@ export async function POST(request: Request) {
         professionalism,
         remark || null,
         domain,
-        user_id
+        dbUser.id
       );
     } else {
       // 创建新评分
-      createRating.run(domain, user_id, relevance, popularity, professionalism, remark || null);
+      createRating.run(domain, dbUser.id, relevance, popularity, professionalism, remark || null);
     }
 
     return NextResponse.json({ success: true });

@@ -59,7 +59,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
     if (!user) return;
     try {
       const response = await fetch(
-        `/api/domains?userId=${user.id}&page=${currentPage}&pageSize=${pageSize}` +
+        `/api/domains?page=${currentPage}&pageSize=${pageSize}` +
         (sortBy ? `&sortBy=${sortBy}&sortOrder=${sortOrder}` : '')
       );
       if (response.ok) {

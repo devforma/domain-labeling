@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db, { getUser } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { User } from '@/lib/db/schema';
 
 export async function GET(request: Request) {
   try {
@@ -8,9 +9,18 @@ export async function GET(request: Request) {
     const userCookie = cookieStore.get('user');
     const user = JSON.parse(userCookie?.value || '{}');
 
-    if (!user?.id || !user?.subject_code) {
+    if (!user?.username || !user?.password || !user?.subject_code) {
       return NextResponse.json(
         { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 通过用户名和密码获取用户信息
+    const dbUser = getUser.get(user.username) as User;
+    if (!dbUser || dbUser.password !== user.password) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
@@ -53,7 +63,7 @@ export async function GET(request: Request) {
 
     // 执行查询
     const domains = db.prepare(query).all(
-      user.id,
+      dbUser.id,
       user.subject_code,
       pageSize,
       offset
@@ -72,7 +82,7 @@ export async function GET(request: Request) {
       FROM domains d
       INNER JOIN ratings r ON d.domain = r.domain
       WHERE d.subject_code = ? AND r.user_id = ?
-    `).all(user.subject_code, user.id) as { ratedCount: number }[];
+    `).all(user.subject_code, dbUser.id) as { ratedCount: number }[];
 
     return NextResponse.json({
       domains,

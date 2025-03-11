@@ -27,25 +27,25 @@ interface RatingDialogProps {
 
 const scoringCriteria = {
   relevance: [
-    { range: '10', description: '内容与目标学科领域高度相关、主题完全一致、覆盖核心知识点。' },
-    { range: '8-9', description: '内容与目标学科领域相关，但可能包含少量无关信息或边缘话题。' },
-    { range: '6-7', description: '内容部分相关，但主题不够聚焦，可能涉及较多无关信息。' },
-    { range: '4-5', description: '内容与目标学科领域相关性较弱，主题偏离核心，无关信息占比较大。' },
-    { range: '1-3', description: '内容与目标学科领域完全无关，主题偏离或错误。' },
+    { range: '9-10', description: '内容与目标学科领域高度相关、主题完全一致、覆盖核心知识点。' },
+    { range: '7-8', description: '内容与目标学科领域相关，但可能包含少量无关信息或边缘话题。' },
+    { range: '5-6', description: '内容部分相关，但主题不够聚焦，可能涉及较多无关信息。' },
+    { range: '3-4', description: '内容与目标学科领域相关性较弱，主题偏离核心，无关信息占比较大。' },
+    { range: '1-2', description: '内容与目标学科领域完全无关，主题偏离或错误。' },
   ],
   popularity: [
-    { range: '10', description: '内容通俗易懂，术语解释清晰，适合大众阅读，语言表达流畅。' },
-    { range: '8-9', description: '内容较为易懂，但部分术语未解释，可能需要一定背景知识。' },
-    { range: '6-7', description: '内容有一定专业性，术语较多且未充分解释，适合有一定基础的读者。' },
-    { range: '4-5', description: '内容较为晦涩，术语未解释，语言表达不够清晰，适合专业读者。' },
-    { range: '1-3', description: '内容过于专业，术语密集且未解释，难以理解，不适合非专业读者。' },
+    { range: '9-10', description: '内容通俗易懂，术语解释清晰，适合大众阅读，语言表达流畅。' },
+    { range: '7-8', description: '内容较为易懂，但部分术语未解释，可能需要一定背景知识。' },
+    { range: '5-6', description: '内容有一定专业性，术语较多且未充分解释，适合有一定基础的读者。' },
+    { range: '3-4', description: '内容较为晦涩，术语未解释，语言表达不够清晰，适合专业读者。' },
+    { range: '1-2', description: '内容过于专业，术语密集且未解释，难以理解，不适合非专业读者。' },
   ],
   professionalism: [
-    { range: '10', description: '内容由权威机构或专家撰写，领域知名度高。' },
-    { range: '8-9', description: '内容具有较高专业性，但知名度不高。' },
-    { range: '6-7', description: '内容有一定专业性，但缺乏深度。' },
-    { range: '4-5', description: '内容专业性较弱，可能存在错误或误导性信息，来源不可靠。' },
-    { range: '1-3', description: '内容缺乏专业性，完全不符合学科要求，可能存在严重错误或虚假信息。' },
+    { range: '9-10', description: '内容由权威机构或专家撰写，领域知名度高。' },
+    { range: '7-8', description: '内容具有较高专业性，但知名度不高。' },
+    { range: '5-6', description: '内容有一定专业性，但缺乏深度。' },
+    { range: '3-4', description: '内容专业性较弱，可能存在错误或误导性信息，来源不可靠。' },
+    { range: '1-2', description: '内容缺乏专业性，完全不符合学科要求，可能存在严重错误或虚假信息。' },
   ],
 };
 
@@ -78,7 +78,7 @@ export default function RatingDialog({
   if (!domain) return null;
 
   const handleSubmit = async () => {
-    if (!domain || !user) return;
+    if (!domain) return;
 
     setIsLoading(true);
     try {
@@ -87,7 +87,6 @@ export default function RatingDialog({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           domain: domain.domain,
-          user_id: user.id,
           relevance: parseInt(relevance),
           popularity: parseInt(popularity),
           professionalism: parseInt(professionalism),
@@ -107,11 +106,6 @@ export default function RatingDialog({
       
       // Call onSubmitSuccess to refresh the data
       onSubmitSuccess?.();
-
-      // Automatically move to the next domain if available
-      // if (hasNext && onNext) {
-      //   onNext();
-      // }
     } catch (error) {
       toast.error('评分失败', {
         duration: 800,
@@ -176,7 +170,7 @@ export default function RatingDialog({
                       criteria.range.split('-').reverse().map((score) => (
                         <div key={score} className="flex items-center space-x-2 cursor-pointer" onClick={() => setRelevance(score)}>
                           <RadioGroupItem value={score} id={`relevance-${score}`} />
-                          <Label htmlFor={`relevance-${score}`} className={`w-[2em] cursor-pointer ${relevance === score ? 'font-bold text-green-600' : ''}`}>
+                          <Label htmlFor={`relevance-${score}`} className={`w-[3em] cursor-pointer ${relevance === score ? 'font-bold text-green-600' : ''}`}>
                             {score}分
                           </Label>
                         </div>
@@ -214,7 +208,7 @@ export default function RatingDialog({
                       criteria.range.split('-').reverse().map((score) => (
                         <div key={score} className="flex items-center space-x-2 cursor-pointer" onClick={() => setPopularity(score)}>
                           <RadioGroupItem value={score} id={`popularity-${score}`} />
-                          <Label htmlFor={`popularity-${score}`} className={`w-[2em] cursor-pointer ${popularity === score ? 'font-bold text-green-600' : ''}`}>
+                          <Label htmlFor={`popularity-${score}`} className={`w-[3em] cursor-pointer ${popularity === score ? 'font-bold text-green-600' : ''}`}>
                             {score}分
                           </Label>
                         </div>
@@ -252,7 +246,7 @@ export default function RatingDialog({
                       criteria.range.split('-').reverse().map((score) => (
                         <div key={score} className="flex items-center space-x-2 cursor-pointer" onClick={() => setProfessionalism(score)}>
                           <RadioGroupItem value={score} id={`professionalism-${score}`} />
-                          <Label htmlFor={`professionalism-${score}`} className={`w-[2em] cursor-pointer ${professionalism === score ? 'font-bold text-green-600' : ''}`}>
+                          <Label htmlFor={`professionalism-${score}`} className={`w-[3em] cursor-pointer ${professionalism === score ? 'font-bold text-green-600' : ''}`}>
                             {score}分
                           </Label>
                         </div>
@@ -278,7 +272,7 @@ export default function RatingDialog({
             value={remark}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRemark(e.target.value)}
             placeholder="请输入备注（选填）"
-            className="resize-none"
+            className="resize-none shadow-none" 
             rows={2}
           />
           <div className="flex gap-2 flex-wrap">
