@@ -17,6 +17,7 @@ export function Pagination({
       <Button
         variant="outline"
         size="sm"
+        className="cursor-pointer"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
       >
@@ -29,6 +30,7 @@ export function Pagination({
       <Button
         variant="outline"
         size="sm"
+        className="cursor-pointer"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
       >

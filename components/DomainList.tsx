@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -13,6 +13,8 @@ import { Pagination } from '@/components/ui/pagination';
 import RatingDialog from './RatingDialog';
 import { Domain } from '@/lib/db/schema';
 import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 interface DomainListProps {
   initialDomains: Domain[];
@@ -24,6 +26,7 @@ interface DomainWithRating extends Domain {
     popularity: number;
     professionalism: number;
     remark: string;
+    updated_at?: string;
   };
 }
 
@@ -48,9 +51,11 @@ export default function DomainList({ initialDomains }: DomainListProps) {
     pageSize: pageSize,
     totalPages: Math.ceil(initialDomains.length / pageSize)
   });
-  const { user } = useAuth();
+  const [totalRatedCount, setTotalRatedCount] = useState(0);
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  const refreshDomains = async () => {
+  const refreshDomains = useCallback(async () => {
     if (!user) return;
     try {
       const response = await fetch(
@@ -67,25 +72,28 @@ export default function DomainList({ initialDomains }: DomainListProps) {
             relevance: d.relevance,
             popularity: d.popularity,
             professionalism: d.professionalism,
-            remark: d.remark
+            remark: d.remark,
+            updated_at: d.updated_at
           } : undefined
         }));
         setDomains(domainsWithRatings);
         setPagination(data.pagination);
-        setSelectedDomain(null);
+        setTotalRatedCount(data.totalRated || 0);
+        // setSelectedDomain(null);
       }
     } catch (error) {
       console.error('Error refreshing domains:', error);
     }
-  };
+  }, [currentPage, user, sortBy, sortOrder]);
 
   // 当页码或排序改变时刷新数据
   useEffect(() => {
     refreshDomains();
-  }, [currentPage, user, sortBy, sortOrder]);
+  }, [currentPage, user, sortBy, sortOrder, refreshDomains]);
 
   const handleRatingComplete = () => {
     refreshDomains();
+    console.log('rating complete');
     setSelectedDomain(null);
   };
 
@@ -104,13 +112,36 @@ export default function DomainList({ initialDomains }: DomainListProps) {
   // 计算进度
   const progress = useMemo(() => {
     const total = pagination.total;
-    const rated = domains.filter(d => d.rating).length;
     return {
-      rated,
+      rated: totalRatedCount,
       total,
-      percentage: total > 0 ? Math.round((rated / total) * 100) : 0
+      percentage: total > 0 ? Math.round((totalRatedCount / total) * 100) : 0
     };
-  }, [domains, pagination.total]);
+  }, [pagination.total, totalRatedCount]);
+
+  // Get the current index of the selected domain
+  const selectedDomainIndex = useMemo(() => {
+    if (!selectedDomain) return -1;
+    return sortedDomains.findIndex(domain => domain.domain === selectedDomain.domain);
+  }, [selectedDomain, sortedDomains]);
+
+  // Handle navigation between domains
+  const handlePreviousDomain = () => {
+    if (selectedDomainIndex > 0) {
+      setSelectedDomain(sortedDomains[selectedDomainIndex - 1]);
+    }
+  };
+
+  const handleNextDomain = () => {
+    if (selectedDomainIndex < sortedDomains.length - 1) {
+      setSelectedDomain(sortedDomains[selectedDomainIndex + 1]);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   return (
     <>
@@ -120,17 +151,25 @@ export default function DomainList({ initialDomains }: DomainListProps) {
           已评分: {progress.rated} 个，
           完成度: {progress.percentage}%
         </div>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="text-sm cursor-pointer"
+        >
+          退出登录
+        </Button>
       </div>
 
       <div className="mx-auto">
         <div className="rounded-md border">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-gray-50">
               <TableRow>
                 <TableHead className="w-[300px] pl-6">域名</TableHead>
                 <TableHead className="w-[400px]">URL</TableHead>
+                <TableHead className="w-[180px] pr-6">标注时间</TableHead>
                 <TableHead 
-                  className="w-[120px] pr-6 cursor-pointer hover:bg-gray-100"
+                  className="w-[120px] cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center gap-1">
@@ -146,7 +185,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
               {sortedDomains.map((domain) => (
                 <TableRow 
                   key={domain.domain} 
-                  className={`${domain.rating ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                  className="cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => setSelectedDomain(domain)}
                 >
                   <TableCell className="w-[300px] pl-6 truncate">{domain.domain}</TableCell>
@@ -161,7 +200,10 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                       {domain.url}
                     </a>
                   </TableCell>
-                  <TableCell className="w-[120px] pr-6">
+                  <TableCell className="w-[180px] pr-6">
+                    {domain.rating?.updated_at}
+                  </TableCell>
+                  <TableCell className="w-[120px]">
                     {domain.rating ? (
                       <span className="text-green-600">已标注</span>
                     ) : (
@@ -187,6 +229,10 @@ export default function DomainList({ initialDomains }: DomainListProps) {
         domain={selectedDomain}
         onClose={handleRatingComplete}
         onSubmitSuccess={refreshDomains}
+        onPrevious={handlePreviousDomain}
+        onNext={handleNextDomain}
+        hasPrevious={selectedDomainIndex > 0}
+        hasNext={selectedDomainIndex < sortedDomains.length - 1}
       />
     </>
   );

@@ -30,7 +30,7 @@ export default function LoginForm() {
       }
     } catch (error) {
       toast.error('登录失败', {
-        description: '发生错误，请稍后重试',
+        description: '发生错误，请稍后重试。错误信息：' + error,
       });
     } finally {
       setIsLoading(false);
@@ -61,7 +61,7 @@ export default function LoginForm() {
       </div>
       <Button
         type="submit"
-        className="w-full"
+        className="w-full cursor-pointer"
         disabled={isLoading}
       >
         {isLoading ? '登录中...' : '登录'}

@@ -10,7 +10,7 @@ interface Rating {
 
 export async function GET(
   request: Request,
-  { params }: { params: { domainId: string } }
+  { params }:any
 ) {
   try {
     const { searchParams } = new URL(request.url);

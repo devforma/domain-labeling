@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,10 @@ interface RatingDialogProps {
   domain: (Domain & { rating?: { relevance: number; popularity: number; professionalism: number; remark: string } }) | null;
   onClose: () => void;
   onSubmitSuccess?: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
 const scoringCriteria = {
@@ -45,15 +49,33 @@ const scoringCriteria = {
   ],
 };
 
-export default function RatingDialog({ domain, onClose, onSubmitSuccess }: RatingDialogProps) {
-  if (!domain) return null;
-  
+export default function RatingDialog({ 
+  domain, 
+  onClose, 
+  onSubmitSuccess,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false,
+}: RatingDialogProps) {
   const [relevance, setRelevance] = useState(domain?.rating?.relevance.toString() || '');
   const [popularity, setPopularity] = useState(domain?.rating?.popularity.toString() || '');
   const [professionalism, setProfessionalism] = useState(domain?.rating?.professionalism.toString() || '');
   const [remark, setRemark] = useState(domain?.rating?.remark || '');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+
+  // Update form state when domain changes
+  useEffect(() => {
+    if (domain) {
+      setRelevance(domain.rating?.relevance.toString() || '');
+      setPopularity(domain.rating?.popularity.toString() || '');
+      setProfessionalism(domain.rating?.professionalism.toString() || '');
+      setRemark(domain.rating?.remark || '');
+    }
+  }, [domain]);
+
+  if (!domain) return null;
 
   const handleSubmit = async () => {
     if (!domain || !user) return;
@@ -78,13 +100,23 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
       }
 
       toast.success('评分成功', {
+        duration: 800,
+        position: 'top-right',
         description: '您的评分已保存',
       });
+      
+      // Call onSubmitSuccess to refresh the data
       onSubmitSuccess?.();
-      onClose();
+
+      // Automatically move to the next domain if available
+      // if (hasNext && onNext) {
+      //   onNext();
+      // }
     } catch (error) {
       toast.error('评分失败', {
-        description: '请稍后重试',
+        duration: 800,
+        position: 'top-right',
+        description: '请稍后重试。错误信息：' + error,
       });
     } finally {
       setIsLoading(false);
@@ -95,7 +127,16 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
     <Dialog open={!!domain} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-[1200px] [&>button]:hidden">
         <DialogHeader className="pb-2">
-          <DialogTitle className='text-center'>
+          <DialogTitle className='text-center flex items-center justify-center gap-4'>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onPrevious}
+              disabled={!hasPrevious}
+              className="h-8 w-8 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </Button>
             <a 
               href={domain.url} 
               target="_blank" 
@@ -104,6 +145,15 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
             >
               {domain.domain}
             </a>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onNext}
+              disabled={!hasNext}
+              className="h-8 w-8 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </Button>
           </DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-3 gap-2">
@@ -235,7 +285,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setRemark("网页无法打开")}
+              onClick={() => setRemark(prev => prev ? `${prev}##网页无法打开` : "网页无法打开")}
               type="button"
               className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
             >
@@ -244,7 +294,7 @@ export default function RatingDialog({ domain, onClose, onSubmitSuccess }: Ratin
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setRemark("内容来源权威")}
+              onClick={() => setRemark(prev => prev ? `${prev}##内容来源权威` : "内容来源权威")}
               type="button"
               className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
             >

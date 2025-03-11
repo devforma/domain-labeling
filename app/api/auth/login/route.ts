@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUser } from '@/lib/db';
+import { User } from '@/lib/db/schema';
 
 export async function POST(request: Request) {
   try {
@@ -14,16 +15,14 @@ export async function POST(request: Request) {
 
     const user = getUser.get(username);
 
-    if (!user || user.password !== password) {
+    if (!user || (user as User).password !== password) {
       return NextResponse.json(
         { error: 'Invalid username or password' },
         { status: 401 }
       );
     }
 
-    // 不返回密码
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword);
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

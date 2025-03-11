@@ -30,7 +30,8 @@ export async function GET(request: Request) {
         r.relevance,
         r.popularity,
         r.professionalism,
-        r.remark
+        r.remark,
+        r.updated_at
       FROM domains d
       LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
       WHERE d.subject_code = ?
@@ -65,6 +66,14 @@ export async function GET(request: Request) {
       WHERE subject_code = ?
     `).all(user.subject_code) as { count: number }[];
 
+    // 获取已标注总数
+    const [{ ratedCount }] = db.prepare(`
+      SELECT COUNT(DISTINCT d.domain) as ratedCount
+      FROM domains d
+      INNER JOIN ratings r ON d.domain = r.domain
+      WHERE d.subject_code = ? AND r.user_id = ?
+    `).all(user.subject_code, user.id) as { ratedCount: number }[];
+
     return NextResponse.json({
       domains,
       pagination: {
@@ -72,7 +81,8 @@ export async function GET(request: Request) {
         page,
         pageSize,
         totalPages: Math.ceil(count / pageSize)
-      }
+      },
+      totalRated: ratedCount
     });
   } catch (error) {
     console.error('Error fetching domains:', error);
