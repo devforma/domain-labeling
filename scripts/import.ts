@@ -3,12 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import db, { createUser, createDomain } from '../lib/db';
 
-// 清空现有数据
-db.exec(`
-  DELETE FROM ratings;
-  DELETE FROM domains;
-  DELETE FROM users;
-`);
 
 // 定义接口
 interface DomainRow {
@@ -27,16 +21,15 @@ interface AccountRow {
 async function importAccounts(filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const parser = parse({
-      columns: true,
       skip_empty_lines: true
     });
 
-    const accounts: AccountRow[] = [];
+    const accounts: string[] = [];
 
     parser.on('readable', () => {
       let record;
       while ((record = parser.read()) !== null) {
-        accounts.push(record as AccountRow);
+        accounts.push(record);
       }
     });
 
@@ -46,7 +39,8 @@ async function importAccounts(filePath: string): Promise<void> {
 
     parser.on('end', () => {
       accounts.forEach(account => {
-        createUser.run(account.username, account.password, account.subject_code);
+        console.log(account);
+        createUser.run(account[0], account[1], account[2]);
       });
       console.log(`已导入 ${accounts.length} 个账户`);
       resolve();
@@ -60,16 +54,15 @@ async function importAccounts(filePath: string): Promise<void> {
 async function importDomains(filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const parser = parse({
-      columns: true,
       skip_empty_lines: true
     });
 
-    const domains: DomainRow[] = [];
+    const domains: string[] = [];
 
     parser.on('readable', () => {
       let record;
       while ((record = parser.read()) !== null) {
-        domains.push(record as DomainRow);
+        domains.push(record);
       }
     });
 
@@ -79,7 +72,7 @@ async function importDomains(filePath: string): Promise<void> {
 
     parser.on('end', () => {
       domains.forEach(domain => {
-        createDomain.run(domain.domain, domain.subject_code, domain.url);
+        createDomain.run(domain[1], domain[0], domain[2]);
       });
       console.log(`已导入 ${domains.length} 个域名`);
       resolve();
@@ -95,9 +88,21 @@ async function main() {
     const accountsPath = path.join(__dirname, 'data/accounts.csv');
     const domainsPath = path.join(__dirname, 'data/domains.csv');
 
+
+    // 清空现有数据
+    // db.exec(`
+    //   DELETE FROM ratings;
+    //   DELETE FROM domains;
+    // `);
+    // db.exec(`
+    //   DELETE FROM ratings;
+    //   DELETE FROM domains;
+    //   DELETE FROM users;
+    // `);
+
     console.log('开始导入数据...');
     
-    await importAccounts(accountsPath);
+    // await importAccounts(accountsPath);
     await importDomains(domainsPath);
 
     // 显示导入后的统计信息

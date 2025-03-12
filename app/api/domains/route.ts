@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     // 构建基础查询
     let query = `
       SELECT 
+        d.id,
         d.domain,
         d.subject_code,
         d.url,
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
         r.remark,
         r.updated_at
       FROM domains d
-      LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
+      LEFT JOIN ratings r ON d.id = r.domain_id AND r.user_id = ?
       WHERE d.subject_code = ?
     `;
 
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
         ELSE 0 
       END ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, d.domain ASC`;
     } else {
-      query += ' ORDER BY d.domain ASC';
+      query += ' ORDER BY d.id ASC';
     }
 
     // 添加分页
@@ -78,9 +79,9 @@ export async function GET(request: Request) {
 
     // 获取已标注总数
     const [{ ratedCount }] = db.prepare(`
-      SELECT COUNT(DISTINCT d.domain) as ratedCount
+      SELECT COUNT(DISTINCT d.id) as ratedCount
       FROM domains d
-      INNER JOIN ratings r ON d.domain = r.domain
+      INNER JOIN ratings r ON d.id = r.domain_id
       WHERE d.subject_code = ? AND r.user_id = ?
     `).all(user.subject_code, dbUser.id) as { ratedCount: number }[];
 

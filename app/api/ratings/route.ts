@@ -26,16 +26,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { domain, relevance, popularity, professionalism, remark } = body;
+    const { domainId, relevance, popularity, professionalism, remark } = body;
 
-    if (!domain || !relevance || !popularity || !professionalism) {
+    if (!domainId || !relevance || !popularity || !professionalism) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const existingRating = getRatingByDomain.get(domain, dbUser.id);
+    const existingRating = getRatingByDomain.get(domainId, dbUser.id);
 
     if (existingRating) {
       // 更新现有评分
@@ -44,12 +44,12 @@ export async function POST(request: Request) {
         popularity,
         professionalism,
         remark || null,
-        domain,
+        domainId,
         dbUser.id
       );
     } else {
       // 创建新评分
-      createRating.run(domain, dbUser.id, relevance, popularity, professionalism, remark || null);
+      createRating.run(domainId, dbUser.id, relevance, popularity, professionalism, remark || null);
     }
 
     return NextResponse.json({ success: true });

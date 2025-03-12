@@ -14,22 +14,23 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS domains (
-    domain TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT NOT NULL,
     subject_code TEXT NOT NULL,
     url TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    domain TEXT NOT NULL,
+    domain_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    relevance INTEGER CHECK (relevance BETWEEN 1 AND 10),
-    popularity INTEGER CHECK (popularity BETWEEN 1 AND 10),
-    professionalism INTEGER CHECK (professionalism BETWEEN 1 AND 10),
+    relevance INTEGER CHECK (relevance BETWEEN 0 AND 10),
+    popularity INTEGER CHECK (popularity BETWEEN 0 AND 10),
+    professionalism INTEGER CHECK (professionalism BETWEEN 0 AND 10),
     remark TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (domain) REFERENCES domains(domain),
+    FOREIGN KEY (domain_id) REFERENCES domains(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
@@ -42,11 +43,11 @@ export const createUser = db.prepare('INSERT INTO users (username, password, sub
 export const updateUserSubject = db.prepare('UPDATE users SET subject_code = ? WHERE id = ?');
 
 // 域名相关
-export const getAllDomains = db.prepare('SELECT * FROM domains ORDER BY domain');
+export const getAllDomains = db.prepare('SELECT * FROM domains ORDER BY id');
 export const getDomainsBySubject = db.prepare(`
   SELECT * FROM domains
   WHERE subject_code = ?
-  ORDER BY domain
+  ORDER BY id
 `);
 export const getDomainByName = db.prepare('SELECT * FROM domains WHERE domain = ?');
 export const createDomain = db.prepare('INSERT INTO domains (domain, subject_code, url) VALUES (?, ?, ?)');
@@ -56,26 +57,27 @@ export const deleteDomain = db.prepare('DELETE FROM domains WHERE domain = ?');
 // 评分相关
 export const getRatingByDomain = db.prepare(`
   SELECT 
-    id,
-    domain,
-    user_id,
-    relevance,
-    popularity,
-    professionalism,
-    remark,
-    created_at,
-    updated_at
-  FROM ratings
-  WHERE domain = ? AND user_id = ?
+    ratings.id,
+    ratings.domain_id,
+    domains.domain,
+    ratings.user_id,
+    ratings.relevance,
+    ratings.popularity,
+    ratings.professionalism,
+    ratings.remark,
+    ratings.created_at,
+    ratings.updated_at
+  FROM ratings INNER JOIN domains ON ratings.domain_id = domains.id
+  WHERE ratings.domain_id = ? AND ratings.user_id = ?
 `);
 export const createRating = db.prepare(`
-  INSERT INTO ratings (domain, user_id, relevance, popularity, professionalism, remark)
+  INSERT INTO ratings (domain_id, user_id, relevance, popularity, professionalism, remark)
   VALUES (?, ?, ?, ?, ?, ?)
 `);
 export const updateRating = db.prepare(`
   UPDATE ratings 
   SET relevance = ?, popularity = ?, professionalism = ?, remark = ?, updated_at = CURRENT_TIMESTAMP
-  WHERE domain = ? AND user_id = ?
+  WHERE domain_id = ? AND user_id = ?
 `);
 
 // 获取带评分的域名列表
@@ -90,9 +92,9 @@ export const getDomainsWithRatings = db.prepare(`
     r.created_at as rating_created_at,
     r.updated_at as rating_updated_at
   FROM domains d
-  LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
+  LEFT JOIN ratings r ON d.id = r.domain_id AND r.user_id = ?
   WHERE d.subject_code = ?
-  ORDER BY d.domain
+  ORDER BY d.id
 `);
 
 // 获取带评分的域名列表（分页）
@@ -113,9 +115,9 @@ export const getDomainsWithRatingsPaginated = db.prepare(`
       WHERE d2.subject_code = ?
     ) as total_count
   FROM domains d
-  LEFT JOIN ratings r ON d.domain = r.domain AND r.user_id = ?
+  LEFT JOIN ratings r ON d.id = r.domain_id AND r.user_id = ?
   WHERE d.subject_code = ?
-  ORDER BY d.domain
+  ORDER BY d.id
   LIMIT ? OFFSET ?
 `);
 
@@ -128,7 +130,7 @@ export const getDomainStats = db.prepare(`
     AVG(r.popularity) as avg_popularity,
     AVG(r.professionalism) as avg_professionalism
   FROM domains d
-  LEFT JOIN ratings r ON d.domain = r.domain
+  LEFT JOIN ratings r ON d.id = r.domain_id
   WHERE d.domain = ?
   GROUP BY d.domain
 `);

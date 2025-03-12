@@ -92,7 +92,7 @@ export default function RatingDialog({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          domain: domain.domain,
+          domainId: domain.id,
           relevance: parseInt(relevance),
           popularity: parseInt(popularity),
           professionalism: parseInt(professionalism),

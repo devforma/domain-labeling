@@ -19,9 +19,9 @@ export async function GET(request: Request) {
         SELECT 
           d.subject_code,
           COUNT(DISTINCT d.domain) as total_domains,
-          COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN d.domain END) as rated_domains
+          COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN d.id END) as rated_domains
         FROM domains d
-        LEFT JOIN ratings r ON d.domain = r.domain
+        LEFT JOIN ratings r ON d.id = r.domain_id
         GROUP BY d.subject_code
       )
       SELECT 

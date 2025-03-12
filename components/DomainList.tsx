@@ -66,6 +66,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
       if (response.ok) {
         const data = await response.json();
         const domainsWithRatings = data.domains.map((d: any) => ({
+          id: d.id,
           domain: d.domain,
           subject_code: d.subject_code,
           url: d.url,

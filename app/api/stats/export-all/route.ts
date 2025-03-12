@@ -18,9 +18,9 @@ export async function GET() {
         r.remark,
         r.created_at as rating_date
       FROM domains d
-      LEFT JOIN ratings r ON d.domain = r.domain
+      LEFT JOIN ratings r ON d.id = r.domain_id
       LEFT JOIN users u ON r.user_id = u.id
-      ORDER BY d.subject_code, d.domain
+      ORDER BY d.subject_code, d.id
     `).all();
 
     // Convert to CSV

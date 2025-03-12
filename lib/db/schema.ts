@@ -11,6 +11,7 @@ export interface Subject {
 }
 
 export interface Domain {
+  id: number;
   domain: string;
   subject_code: string;
   url: string;
