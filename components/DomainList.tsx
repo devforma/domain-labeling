@@ -211,21 +211,24 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                       {domain.url.includes(',') ? (
                         <div className="flex flex-col gap-1">
                           {domain.url.split(',').map((url, index) => (
+                            <p key={index}>
                             <a 
                               key={index}
                               href={url.trim()} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline truncate block"
+                              className="text-blue-600 hover:underline truncate"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {url.length > 42 
                                 ? `${url.substring(0, 42)}...` 
                                 : url}
                             </a>
+                            </p>
                           ))}
                         </div>
                       ) : (
+                        <p>
                         <a 
                           href={domain.url} 
                           target="_blank" 
@@ -237,6 +240,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                             ? `${domain.url.substring(0, 42)}...` 
                             : domain.url}
                         </a>
+                        </p>
                       )}
                     </TableCell>
                     <TableCell className="w-[180px] pr-6">
