@@ -41,6 +41,7 @@ const pageSize = 20;
 
 export default function DomainList({ initialDomains }: DomainListProps) {
   const [selectedDomain, setSelectedDomain] = useState<DomainWithRating | null>(null);
+  const [selectedDomainIndex, setSelectedDomainIndex] = useState<number>(-1);
   const [domains, setDomains] = useState<DomainWithRating[]>(initialDomains);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'status' | null>(null);
@@ -119,22 +120,20 @@ export default function DomainList({ initialDomains }: DomainListProps) {
     };
   }, [pagination.total, totalRatedCount]);
 
-  // Get the current index of the selected domain
-  const selectedDomainIndex = useMemo(() => {
-    if (!selectedDomain) return -1;
-    return sortedDomains.findIndex(domain => domain.domain === selectedDomain.domain);
-  }, [selectedDomain, sortedDomains]);
-
   // Handle navigation between domains
   const handlePreviousDomain = () => {
     if (selectedDomainIndex > 0) {
       setSelectedDomain(sortedDomains[selectedDomainIndex - 1]);
+      setSelectedDomainIndex(selectedDomainIndex - 1);
     }
   };
 
   const handleNextDomain = () => {
+    console.log(selectedDomainIndex);
     if (selectedDomainIndex < sortedDomains.length - 1) {
+      console.log(sortedDomains[selectedDomainIndex + 1]);
       setSelectedDomain(sortedDomains[selectedDomainIndex + 1]);
+      setSelectedDomainIndex(selectedDomainIndex + 1);
     }
   };
 
@@ -147,9 +146,15 @@ export default function DomainList({ initialDomains }: DomainListProps) {
     <>
       <div className="mb-4 flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          总计: {progress.total} 个域名，
-          已评分: {progress.rated} 个，
-          完成度: {progress.percentage}%
+          {
+            progress.total > 0 && (
+              <>
+                总计: {progress.total} 个域名，
+                已评分: {progress.rated} 个，
+                完成度: {progress.percentage}%
+              </>
+            )
+          }
         </div>
         <Button 
           variant="outline" 
@@ -161,69 +166,100 @@ export default function DomainList({ initialDomains }: DomainListProps) {
       </div>
 
       <div className="mx-auto">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead className="w-[300px] pl-6">域名</TableHead>
-                <TableHead className="w-[400px]">URL</TableHead>
-                <TableHead className="w-[180px] pr-6">标注时间</TableHead>
-                <TableHead 
-                  className="w-[120px] cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center gap-1">
-                    标注状态
-                    <span className="text-xs text-gray-400">
-                      {sortBy === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
-                    </span>
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedDomains.map((domain) => (
-                <TableRow 
-                  key={domain.domain} 
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setSelectedDomain(domain)}
-                >
-                  <TableCell className="w-[300px] pl-6 truncate">{domain.domain}</TableCell>
-                  <TableCell className="w-[400px]">
-                    <a 
-                      href={domain.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline truncate"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {domain.url}
-                    </a>
-                  </TableCell>
-                  <TableCell className="w-[180px] pr-6">
-                    {domain.rating?.updated_at}
-                  </TableCell>
-                  <TableCell className="w-[120px]">
-                    {domain.rating ? (
-                      <span className="text-green-600">已标注</span>
-                    ) : (
-                      <span className="text-red-600">未标注</span>
-                    )}
-                  </TableCell>
+        {progress.total === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="w-[300px] pl-6">域名</TableHead>
+                  <TableHead className="w-[400px]">URL</TableHead>
+                  <TableHead className="w-[180px] pr-6">标注时间</TableHead>
+                  <TableHead 
+                    className="w-[120px] cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      标注状态
+                      <span className="text-xs text-gray-400">
+                        {sortBy === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+                      </span>
+                    </div>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {sortedDomains.map((domain, index) => (
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setSelectedDomain(domain);
+                      setSelectedDomainIndex(index);
+                    }}
+                  >
+                    <TableCell className="w-[300px] pl-6 truncate">{domain.domain}</TableCell>
+                    <TableCell className="w-[400px]">
+                      {domain.url.includes(',') ? (
+                        <div className="flex flex-col gap-1">
+                          {domain.url.split(',').map((url, index) => (
+                            <a 
+                              key={index}
+                              href={url.trim()} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline truncate block"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {url.trim()}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <a 
+                          href={domain.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {domain.url}
+                        </a>
+                      )}
+                    </TableCell>
+                    <TableCell className="w-[180px] pr-6">
+                      {domain.rating?.updated_at}
+                    </TableCell>
+                    <TableCell className="w-[120px]">
+                      {domain.rating ? (
+                        <span className="text-green-600">已标注</span>
+                      ) : (
+                        <span className="text-red-600">未标注</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-center">
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
+      {progress.total > 0 && (
+        <div className="flex items-center justify-center">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              setSelectedDomainIndex(-1);
+            }}
+          />
+        </div>
+      )}
 
       <RatingDialog
         domain={selectedDomain}

@@ -31,10 +31,10 @@ users.forEach(user => {
 
 // 基础域名数据
 const baseDomains = [
-  { domain: 'mathworld.wolfram.com', subject_code: 'MATH', url: 'https://mathworld.wolfram.com' },
-  { domain: 'khanacademy.org', subject_code: 'MATH', url: 'https://www.khanacademy.org/math' },
-  { domain: 'hyperphysics.phy-astr.gsu.edu', subject_code: 'PHYSICS', url: 'http://hyperphysics.phy-astr.gsu.edu' },
-  { domain: 'physics.org', subject_code: 'PHYSICS', url: 'https://www.physics.org' },
+  { domain: 'mathworld.wolfram.com', subject_code: 'MATH', url: 'https://mathworld.wolfram.com,https://www.wolframalpha.com/examples/mathematics' },
+  { domain: 'khanacademy.org', subject_code: 'MATH', url: 'https://www.khanacademy.org/math,https://www.khanacademy.org/math/algebra' },
+  { domain: 'hyperphysics.phy-astr.gsu.edu', subject_code: 'PHYSICS', url: 'http://hyperphysics.phy-astr.gsu.edu,http://hyperphysics.phy-astr.gsu.edu/hbase/hframe.html' },
+  { domain: 'physics.org', subject_code: 'PHYSICS', url: 'https://www.physics.org,https://www.physics.org/explore.asp' },
   { domain: 'chemguide.co.uk', subject_code: 'CHEMISTRY', url: 'https://www.chemguide.co.uk' },
   { domain: 'biology-online.org', subject_code: 'BIOLOGY', url: 'https://www.biology-online.org' }
 ];

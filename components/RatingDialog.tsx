@@ -27,27 +27,34 @@ interface RatingDialogProps {
 
 const scoringCriteria = {
   relevance: [
-    { range: '9-10', description: '内容与目标学科领域高度相关、主题完全一致、覆盖核心知识点。' },
-    { range: '7-8', description: '内容与目标学科领域相关，但可能包含少量无关信息或边缘话题。' },
-    { range: '5-6', description: '内容部分相关，但主题不够聚焦，可能涉及较多无关信息。' },
-    { range: '3-4', description: '内容与目标学科领域相关性较弱，主题偏离核心，无关信息占比较大。' },
-    { range: '1-2', description: '内容与目标学科领域完全无关，主题偏离或错误。' },
+    { range: '9-10', description: '内容与目标学科领域高度相关，主题完全一致' },
+    { range: '7-8', description: '内容与目标学科领域相关，但可能包含少量无关信息或边缘话题' },
+    { range: '5-6', description: '内容有一定关联，涉及目标学科的基本概念，但主要侧重于其他领域或过于通俗' },
+    { range: '3-4', description: '内容与目标学科关联较低，可能仅有少量术语或概念相关，整体偏离主题' },
+    { range: '0-1-2', description: '内容几乎无相关学科信息，只有少量内容可能在广义上有所涉及' },
   ],
   popularity: [
-    { range: '9-10', description: '内容通俗易懂，术语解释清晰，适合大众阅读，语言表达流畅。' },
-    { range: '7-8', description: '内容较为易懂，但部分术语未解释，可能需要一定背景知识。' },
-    { range: '5-6', description: '内容有一定专业性，术语较多且未充分解释，适合有一定基础的读者。' },
-    { range: '3-4', description: '内容较为晦涩，术语未解释，语言表达不够清晰，适合专业读者。' },
-    { range: '1-2', description: '内容过于专业，术语密集且未解释，难以理解，不适合非专业读者。' },
+    { range: '9-10', description: '内容通俗易懂，术语解释清晰，适合大众阅读，语言表达流畅' },
+    { range: '7-8', description: '内容较为易懂，但部分术语未解释，可能需要一定背景知识' },
+    { range: '5-6', description: '内容有一定专业性，术语较多且未充分解释，适合有一定基础的读者' },
+    { range: '3-4', description: '内容较为晦涩，术语未解释，语言表达不够清晰，适合专业读者' },
+    { range: '0-1-2', description: '内容过于专业，术语密集且未解释，难以理解，不适合非专业读者' },
   ],
   professionalism: [
-    { range: '9-10', description: '内容由权威机构或专家撰写，领域知名度高。' },
-    { range: '7-8', description: '内容具有较高专业性，但知名度不高。' },
-    { range: '5-6', description: '内容有一定专业性，但缺乏深度。' },
-    { range: '3-4', description: '内容专业性较弱，可能存在错误或误导性信息，来源不可靠。' },
-    { range: '1-2', description: '内容缺乏专业性，完全不符合学科要求，可能存在严重错误或虚假信息。' },
+    { range: '9-10', description: '内容由权威机构或专家撰写，领域知名度高' },
+    { range: '7-8', description: '内容具有较高专业性，但知名度不高' },
+    { range: '5-6', description: '内容有一定专业性，但缺乏深度' },
+    { range: '3-4', description: '内容专业性较弱，可能存在错误或误导性信息，来源不可靠' },
+    { range: '0-1-2', description: '内容缺乏专业性，完全不符合学科要求，可能存在严重错误或虚假信息' },
   ],
 };
+
+
+const remarkOptions = [
+  "网页无法打开",
+  "网页无法打开，通过提示可打开新网页，新网页地址（需补充）",
+  "网页内容难以评判，不确定",
+];
 
 export default function RatingDialog({ 
   domain, 
@@ -63,7 +70,6 @@ export default function RatingDialog({
   const [professionalism, setProfessionalism] = useState(domain?.rating?.professionalism.toString() || '');
   const [remark, setRemark] = useState(domain?.rating?.remark || '');
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
 
   // Update form state when domain changes
   useEffect(() => {
@@ -127,24 +133,42 @@ export default function RatingDialog({
               size="icon"
               onClick={onPrevious}
               disabled={!hasPrevious}
-              className="h-8 w-8 cursor-pointer"
+              className="mr-4 h-8 w-8 cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </Button>
-            <a 
-              href={domain.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              {domain.domain}
-            </a>
+            {
+              domain.url.includes(',') ? (
+                <div className="flex flex-col gap-2">
+                  {domain.url.split(',').map((url, index) => (
+                    <a 
+                      key={index}
+                      href={url.trim()} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline block"
+                    >
+                      {url.trim()}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <a 
+                  href={domain.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  {domain.domain}
+                </a>
+              )
+            }
             <Button
               variant="outline"
               size="icon"
               onClick={onNext}
               disabled={!hasNext}
-              className="h-8 w-8 cursor-pointer"
+              className="ml-4 h-8 w-8 cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Button>
@@ -276,28 +300,24 @@ export default function RatingDialog({
             rows={2}
           />
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRemark(prev => prev ? `${prev}##网页无法打开` : "网页无法打开")}
-              type="button"
-              className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
-            >
-              网页无法打开
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRemark(prev => prev ? `${prev}##内容来源权威` : "内容来源权威")}
-              type="button"
-              className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
-            >
-              内容来源权威
-            </Button>
+            {
+              remarkOptions.map((item) => (
+                <Button
+                  variant="outline"
+                  key={item}
+                  size="sm"
+                  onClick={() => setRemark(prev => prev ? `${prev};${item}` : item)}
+                  type="button"
+                  className="text-sm text-muted-foreground font-normal hover:cursor-pointer"
+                >
+                  {item}
+                </Button>
+              ))
+            }
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-2 mt-[-16px]">
           <Button variant="outline" onClick={onClose} className='hover:cursor-pointer'>
             取消
           </Button>
