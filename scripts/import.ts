@@ -39,7 +39,6 @@ async function importAccounts(filePath: string): Promise<void> {
 
     parser.on('end', () => {
       accounts.forEach(account => {
-        console.log(account);
         createUser.run(account[0], account[1], account[2]);
       });
       console.log(`已导入 ${accounts.length} 个账户`);
@@ -86,7 +85,7 @@ async function importDomains(filePath: string): Promise<void> {
 async function main() {
   try {
     const accountsPath = path.join(__dirname, 'data/accounts.csv');
-    const domainsPath = path.join(__dirname, 'data/domains.csv');
+    const domainsPath = path.join(__dirname, 'data/hpj_54subject.csv');
 
 
     // 清空现有数据
