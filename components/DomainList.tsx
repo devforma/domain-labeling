@@ -202,7 +202,11 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                       setSelectedDomainIndex(index);
                     }}
                   >
-                    <TableCell className="w-[300px] pl-6 truncate">{domain.domain}</TableCell>
+                    <TableCell className="w-[300px] pl-6 truncate">
+                      {domain.domain.length > 30 
+                        ? `${domain.domain.substring(0, 30)}...` 
+                        : domain.domain}
+                    </TableCell>
                     <TableCell className="w-[400px]">
                       {domain.url.includes(',') ? (
                         <div className="flex flex-col gap-1">
@@ -215,7 +219,9 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                               className="text-blue-600 hover:underline truncate block"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {url.trim()}
+                              {url.length > 42 
+                                ? `${url.substring(0, 42)}...` 
+                                : url}
                             </a>
                           ))}
                         </div>
@@ -227,7 +233,9 @@ export default function DomainList({ initialDomains }: DomainListProps) {
                           className="text-blue-600 hover:underline truncate"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {domain.url}
+                          {domain.url.length > 42
+                            ? `${domain.url.substring(0, 42)}...` 
+                            : domain.url}
                         </a>
                       )}
                     </TableCell>

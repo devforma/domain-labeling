@@ -148,7 +148,9 @@ export default function RatingDialog({
                       rel="noopener noreferrer"
                       className="text-blue-600 underline block"
                     >
-                      {url.trim()}
+                      {url.length > 40 
+                                ? `${url.substring(0, 40)}...` 
+                                : url}
                     </a>
                   ))}
                 </div>
@@ -159,7 +161,9 @@ export default function RatingDialog({
                   rel="noopener noreferrer"
                   className="text-blue-600 underline"
                 >
-                  {domain.domain}
+                  {domain.domain.length > 40 
+                    ? `${domain.domain.substring(0, 40)}...` 
+                    : domain.domain}
                 </a>
               )
             }
