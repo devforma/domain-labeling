@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { domainId, relevance, popularity, professionalism, remark } = body;
 
-    if (!domainId || !relevance || !popularity || !professionalism) {
+    if (relevance === null || popularity === null || professionalism === null) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
