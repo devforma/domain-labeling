@@ -70,7 +70,7 @@ export default function DomainList({ initialDomains }: DomainListProps) {
           domain: d.domain,
           subject_code: d.subject_code,
           url: d.url,
-          rating: d.relevance ? {
+          rating: d.relevance !== null ? {
             relevance: d.relevance,
             popularity: d.popularity,
             professionalism: d.professionalism,
